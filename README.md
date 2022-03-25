@@ -3,6 +3,9 @@
 Видео-отчет 
 https://www.youtube.com/watch?v=7XymYXh8e6U
 
+
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/7XymYXh8e6U/0.jpg)](http://www.youtube.com/watch?v=7XymYXh8e6U)
+
 #LQR “Линейно-квадратичный регулятор (англ. Linear quadratic regulator, LQR)”, 
 оптимизация систем управления для управления роботов, в данном случае на основе данных из датчика ориентации типа MPU9250 [гироскоп, акселерометр, магнитометр]. 
 Код написан на языке программирования С/С++ под микроконтроллер ESP32 wroom-32d. 
