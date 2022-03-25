@@ -16,7 +16,7 @@
 
 #include "IMath/IMaths.h"
 
-#define pushButton_pin 18 // 15
+#define pushButton_pin 18 
 #define PIN_SDA 21
 #define PIN_SDL 22
 
@@ -154,11 +154,11 @@ WiFiUDP Udp; // UPD-сокет обект
 
 //----------------------------------//
 
-#define PIN_IN1 19 // 35
-#define PIN_IN2 18 // 34
+#define PIN_IN1 19
+#define PIN_IN2 18 
 
-#define PIN_IN3 35 // 19
-#define PIN_IN4 34 // 18
+#define PIN_IN3 35
+#define PIN_IN4 34
 
 // Setup a RotaryEncoder with 2 steps per latch for the 2 signal input pins:
 InterruptEncoder encoderA;
@@ -176,8 +176,8 @@ int motor2Pin1 = 25;
 int motor2Pin2 = 33;
 int enable2Pin = 32;
 
-#define LEFT_PWM_MIN 35  // 0  // 60//45
-#define RIGHT_PWM_MIN 35 // 0 // 50//70
+#define LEFT_PWM_MIN 35  
+#define RIGHT_PWM_MIN 35 
 #define MAX_SPEED_FORCE 255
 
 IMotor motorA(motor1Pin1, motor1Pin2, enable1Pin, LEFT_PWM_MIN, MAX_SPEED_FORCE);
