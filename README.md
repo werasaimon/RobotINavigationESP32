@@ -1,4 +1,4 @@
-# LQR_ROBOT_DRIVER
+# LQR_ROBOT_DRIVER | ESP32 WROOM 32D |
 
 Видео-отчет 
 https://www.youtube.com/watch?v=7XymYXh8e6U
