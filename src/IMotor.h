@@ -32,6 +32,12 @@ public:
   uint8_t IN2, IN1;
   void setMotor(int dir, int pwmVal, int in1, int in2);
 
+
+  void setRange(int upper_limit, int lower_limit )
+  {
+    _upper_limit = upper_limit;
+    _lower_limit = lower_limit;
+  } 
  
  public:
   

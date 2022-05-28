@@ -110,9 +110,9 @@ void LQRMotors::update_encoder_states(float mpuYaw)
 void LQRMotors::update_motors(bool isNull, int vel, float k[4], float k1[2], int min_dist)
 {
     // error
-    float e = position_set_point - average_theta;
+    float e = (position_set_point - average_theta);
 
-    if (fabs(e) < 1.f)
+    if (fabs(e) < 20.f)
     {
       e = 0;
     }
@@ -124,13 +124,20 @@ void LQRMotors::update_motors(bool isNull, int vel, float k[4], float k1[2], int
     v[0] = (0.5f * (u[0] + u[1])); // motor left
     v[1] = (0.5f * (u[0] - u[1])); // motor right
 
-    if (fabs(e) < min_dist && isNull)
+    // v[0] = (0.5f * u[0]); // motor left
+    // v[1] = (0.5f * u[0]); // motor right
+
+
+    if (/*fabs(e) < min_dist && */isNull)
     {
         // v[0]=v[1]=0;
-        if (vel == 0)
+        //if (vel == 0)
         {
             m_Encoders[0]->count = ((position_set_point / 0.0116f) * -0.5f);
             m_Encoders[1]->count = ((position_set_point / 0.0116f) * -0.5f);
+
+            velocity_set_point = average_RPM = 0;
+            position_set_point = average_theta = 0;
         }
     }
 
@@ -143,6 +150,7 @@ void LQRMotors::update_motors(bool isNull, int vel, float k[4], float k1[2], int
     m_Motors[1]->setMotor(v[1]);
 
 
+       // Serial.println(error);
     // Serial.println("Yaw , Yaw_Dot");
     // Serial.print(k1[0] * yaw);
     // Serial.print("  ");

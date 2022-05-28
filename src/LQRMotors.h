@@ -1,7 +1,7 @@
 #ifndef LQRMOTORS_H
 #define LQRMOTORS_H
 
-#include <InterruptEncoder.h>
+#include "InterruptEncoder.h"
 #include <MPU9250.h>
 #include "IMotor.h"
 
@@ -49,9 +49,8 @@ public:
 
     float position_set_point = 0;
     float velocity_set_point = 0;
-private:
-   
-   
+//private:
+   public: 
     /* data */
 
 

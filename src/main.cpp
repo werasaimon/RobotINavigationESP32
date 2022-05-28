@@ -5,7 +5,7 @@
  */
 
 #include <Arduino.h>
-#include <ESP32Encoder.h>
+#include "ESP32Encoder.h"
 #include <InterruptEncoder.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
@@ -34,6 +34,7 @@ struct dataControl
   float kd;
   float ki;
   float kf;
+  float kt;
 };
 
 static dataControl *data_control =  nullptr;
@@ -125,7 +126,7 @@ void print_calibration()
 
 unsigned int localPort = 8888; // Локальный порт прослушевания сети
 
-/**/
+/**
 const char *ssid = "wera";           // SSID имя WiFi точки-доступа робокара
 const char *password = "123qwe1023"; // Пароль WiFii
 
@@ -134,7 +135,7 @@ IPAddress gateway(192,168,1,1);    // IP-адрес шлюза
 IPAddress subnet(255,255,255,0);   // Подсеть 
 /**/
 
-/**
+/**/
 const char *ssid     = "ROBO_CAR"; // SSID имя WiFi точки-доступа робокара 
 const char* password = "12345678"; // Пароль WiFii  
 
@@ -176,12 +177,13 @@ int motor2Pin1 = 25;
 int motor2Pin2 = 33;
 int enable2Pin = 32;
 
-#define LEFT_PWM_MIN 35  
-#define RIGHT_PWM_MIN 35 
-#define MAX_SPEED_FORCE 255
+#define LEFT_PWM_MIN 0//50//35  
+#define RIGHT_PWM_MIN 0//50//35 
+#define LEFT_MAX_SPEED_FORCE 250//200//55
+#define RIGHT_MAX_SPEED_FORCE 250//200//55
 
-IMotor motorA(motor1Pin1, motor1Pin2, enable1Pin, LEFT_PWM_MIN, MAX_SPEED_FORCE);
-IMotor motorB(motor2Pin1, motor2Pin2, enable2Pin, RIGHT_PWM_MIN, MAX_SPEED_FORCE);
+IMotor motorA(motor1Pin1, motor1Pin2, enable1Pin, LEFT_PWM_MIN, LEFT_MAX_SPEED_FORCE);
+IMotor motorB(motor2Pin1, motor2Pin2, enable2Pin, RIGHT_PWM_MIN, RIGHT_MAX_SPEED_FORCE);
 
 int dutyCycle = 180;
 
@@ -206,11 +208,11 @@ void setup()
   setting.accel_fs_sel = ACCEL_FS_SEL::A16G;
   setting.gyro_fs_sel = GYRO_FS_SEL::G2000DPS;
   setting.mag_output_bits = MAG_OUTPUT_BITS::M16BITS;
-  setting.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_1000HZ;
+  setting.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_200HZ;
   setting.gyro_fchoice = 0x03;
-  GYRO_DLPF_CFG gyro_dlpf_cfg{GYRO_DLPF_CFG::DLPF_41HZ};
-  uint8_t accel_fchoice{0x01};
-  ACCEL_DLPF_CFG accel_dlpf_cfg{ACCEL_DLPF_CFG::DLPF_45HZ};
+  setting.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_41HZ;
+  setting.accel_fchoice = 0x01;
+  setting.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_45HZ;
 
   if (!mpu.setup(0x68, setting))
   {
@@ -229,10 +231,15 @@ void setup()
   // load from eeprom
   loadCalibration();
 
-  mpu.setFilterIterations(5);
-  mpu.selectFilter(QuatFilterSel::MADGWICK);
+  // mpu.setFilterIterations(5);
+  // mpu.selectFilter(QuatFilterSel::MADGWICK);
 
-  delay(5000);
+  mpu.setFilterIterations(10);
+  mpu.selectFilter(QuatFilterSel::MAHONY);
+
+  ////mpu.Init();
+
+  delay(3000);
 
   //---------------------//
 
@@ -288,6 +295,18 @@ void setup()
   Serial.printf("UDP server on port %d\n", localPort);
 
   Udp.begin(localPort); // Начинаем слушать порт 8888 . Ждем потключения клиента
+
+  LQRRobot.AbsolutResetEncoderPos();
+  
+  LQRRobot.pwm_right_offset = 0;
+  LQRRobot.pwm_left_offset = 0;
+
+  LQRRobot.position_set_point = 0;
+  LQRRobot.velocity_set_point = 0;
+
+  LQRRobot.position_set_point = 0;
+  LQRRobot.average_theta = 0;
+
 }
 
 // Read the current position of the encoder and print out when changed.
@@ -425,6 +444,8 @@ void print_roll_pitch_yaw()
     k1[0] = data_control->ki;
     k1[1] = data_control->kf;
 
+
+
     LQRRobot.position_set_point += data_control->speedX / 100.f;
     LQRRobot.pwm_right_offset = -data_control->turn / 20.f;
     LQRRobot.pwm_left_offset = data_control->turn / 20.f;
@@ -439,6 +460,7 @@ void print_roll_pitch_yaw()
                         mpu.getQuaternionX(),
                         mpu.getQuaternionY(),
                         mpu.getQuaternionZ());
+
     IMath::Quaternion Q_Target = 
     IMath::Quaternion::FromAxisRot(IMath::Vector3::Z, LQRRobot.offset_Yaw);
     Q = Q * Q_Target;
@@ -455,10 +477,17 @@ void print_roll_pitch_yaw()
     IMath::Vector3 euler_target = Q_Target.GetEulerAngles3();
 
 
-    Serial.println("Real,Target");
-    Serial.print(/*IMath::IRadiansToDegrees*/(mpu.getEulerZ()));
+    // Serial.println("Real,Target");
+    // Serial.print(/*IMath::IRadiansToDegrees*/(mpu.getEulerZ()));
+    // Serial.print("  ");
+    // Serial.print(euler_target.z);
+    // Serial.println();
+
+
+    Serial.println("Control_Position,Update_Position");
+    Serial.print(/*IMath::IRadiansToDegrees*/(LQRRobot.position_set_point));
     Serial.print("  ");
-    Serial.print(euler_target.z);
+    Serial.print(LQRRobot.average_theta);
     Serial.println();
     
 
@@ -495,20 +524,44 @@ void print_roll_pitch_yaw()
     // // Выввод присланых данных в сериал порт
     // // Serial.printf(buff);
 
+   if(data_control)
+   {
+        // Serial.println(mpu.getYaw());
+      LQRRobot.update_encoder_states(euler.z);
+      LQRRobot.update_motors(data_control->is_null_pos,
+                             data_control->speedX, k, k1, 
+                             data_control->ki);
+
+                             data_control->turn = data_control->speedX = 0;
+      //LQRRobot.SerialPlotterPrint();
+   }
+
     Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
     Udp.write((uint8_t*)&_dataDescriptor, sizeof(DataDescriptor));
     Udp.endPacket();
 
     // delay(50);
   }
+  else
+  {
+    /**
+    LQRRobot.AbsolutResetEncoderPos();
+    LQRRobot.position_set_point = 0;
+    LQRRobot.average_theta = 0;
+    /**/
+  }
 
 
-   if(data_control)
-   {
-        // Serial.println(mpu.getYaw());
-      LQRRobot.update_encoder_states(euler.z);
-      LQRRobot.update_motors(data_control->is_null_pos, data_control->speedX, k, k1, data_control->ki);
-      //LQRRobot.SerialPlotterPrint();
-   }
+  //  if(data_control)
+  //  {
+  //       // Serial.println(mpu.getYaw());
+  //     LQRRobot.update_encoder_states(euler.z);
+  //     LQRRobot.update_motors(data_control->is_null_pos,
+  //                            data_control->speedX, k, k1, 
+  //                            data_control->ki);
+
+  //                            data_control->speedX=0;
+  //     //LQRRobot.SerialPlotterPrint();
+  //  }
    
 }
